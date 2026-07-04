@@ -6,40 +6,24 @@
 <script>
 (function(){
   var el = document.getElementById('msg');
-  var hash = window.location.hash.slice(1);
-  var search = window.location.search.slice(1);
-  var src = hash || search;
-  var p = new URLSearchParams(src);
-  var token = p.get('access_token');
-  var exp = p.get('expires_in');
+  var p = new URLSearchParams(window.location.search);
+  var code = p.get('code');
   var error = p.get('error');
 
-  // 오류 응답
   if(error){
-    el.innerHTML = '❌ 오류: <b>' + error + '</b><br><small>' + (p.get('error_description')||'') + '</small>';
+    el.innerHTML = '❌ 오류: <b>' + error + '</b>';
     return;
   }
-
-  // 토큰 없음 — 디버깅 정보 표시
-  if(!token){
-    el.innerHTML = '⚠️ 토큰 없음<br>'
-      + '<small style="color:#888;">hash: ' + (hash||'(없음)') + '<br>'
-      + 'search: ' + (search||'(없음)') + '<br>'
-      + 'full url: ' + window.location.href + '</small>';
+  if(!code){
+    el.innerHTML = '⚠️ 코드 없음<br><small>URL: ' + window.location.href + '</small>';
     return;
   }
-
-  // 토큰 있음 — opener로 전달
   if(window.opener){
-    try{
-      window.opener.postMessage({type:'gauth_token', token:token, expiresIn:exp}, '*');
-      el.innerHTML = '✅ 인증 완료! 창이 자동으로 닫힙니다.';
-      setTimeout(function(){window.close();}, 1500);
-    }catch(e){
-      el.innerHTML = '⚠️ 전달 실패: ' + e.message;
-    }
+    window.opener.postMessage({type:'gauth_code', code:code}, '*');
+    el.innerHTML = '✅ 인증 완료! 창이 자동으로 닫힙니다.';
+    setTimeout(function(){window.close();},1500);
   } else {
-    el.innerHTML = '⚠️ window.opener 없음<br><small>토큰은 받았지만 앱으로 전달 불가. 브라우저 팝업 차단 여부 확인해주세요.</small>';
+    el.innerHTML = '⚠️ window.opener 없음 — 팝업 차단 확인';
   }
 })();
 </script>
