@@ -5,26 +5,25 @@
 <p id="msg" style="font-family:sans-serif;padding:30px;font-size:16px;">인증 처리 중...</p>
 <script>
 (function(){
-  var el = document.getElementById('msg');
+  var isBridge = new URLSearchParams(window.location.search).get('bridge')==='1';
+  if(isBridge){
+    // 브리지 모드: localStorage 폴링 → parent에 전달
+    var t = setInterval(function(){
+      var code = localStorage.getItem('wqa_oauth_code');
+      if(code){ clearInterval(t); localStorage.removeItem('wqa_oauth_code'); window.parent.postMessage({type:'gauth_code',code:code},'*'); }
+    },300);
+    setTimeout(function(){clearInterval(t);},180000);
+    return;
+  }
   var p = new URLSearchParams(window.location.search);
-  var code = p.get('code');
-  var error = p.get('error');
-
-  if(error){
-    el.innerHTML = '❌ 오류: <b>' + error + '</b>';
-    return;
-  }
-  if(!code){
-    el.innerHTML = '⚠️ 코드 없음<br><small>URL: ' + window.location.href + '</small>';
-    return;
-  }
-  if(window.opener){
-    window.opener.postMessage({type:'gauth_code', code:code}, '*');
-    el.innerHTML = '✅ 인증 완료! 창이 자동으로 닫힙니다.';
-    setTimeout(function(){window.close();},1500);
-  } else {
-    el.innerHTML = '⚠️ window.opener 없음 — 팝업 차단 확인';
-  }
+  var code = p.get('code'); var error = p.get('error');
+  var el = document.getElementById('msg');
+  if(error){ el.innerHTML='❌ 오류: <b>'+error+'</b>'; return; }
+  if(!code){ el.innerHTML='⚠️ 코드 없음<br><small>'+window.location.href+'</small>'; return; }
+  localStorage.setItem('wqa_oauth_code', code);
+  if(window.opener){ try{ window.opener.postMessage({type:'gauth_code',code:code},'*'); }catch(e){} }
+  el.innerHTML='✅ 인증 완료! 창이 자동으로 닫힙니다.';
+  setTimeout(function(){window.close();},1500);
 })();
 </script>
 </body>
