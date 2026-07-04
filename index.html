@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>Drive 인증</title></head>
+<body>
+<p style="font-family:sans-serif;padding:30px;">인증 처리 중...</p>
+<script>
+(function(){
+  var hash = window.location.hash.slice(1);
+  var p = new URLSearchParams(hash);
+  var token = p.get('access_token');
+  var exp = p.get('expires_in');
+  if(token && window.opener){
+    window.opener.postMessage({type:'gauth_token',token:token,expiresIn:exp},'*');
+    document.body.innerHTML='<p style="font-family:sans-serif;padding:30px;">✅ 인증 완료! 창이 자동으로 닫힙니다.</p>';
+    setTimeout(function(){window.close();},1500);
+  } else {
+    document.body.innerHTML='<p style="font-family:sans-serif;padding:30px;color:red;">토큰 없음. 다시 시도해주세요.</p>';
+  }
+})();
+</script>
+</body>
+</html>
