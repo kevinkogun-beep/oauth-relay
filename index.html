@@ -2,19 +2,44 @@
 <html>
 <head><meta charset="utf-8"><title>Drive 인증</title></head>
 <body>
-<p style="font-family:sans-serif;padding:30px;">인증 처리 중...</p>
+<p id="msg" style="font-family:sans-serif;padding:30px;font-size:16px;">인증 처리 중...</p>
 <script>
 (function(){
+  var el = document.getElementById('msg');
   var hash = window.location.hash.slice(1);
-  var p = new URLSearchParams(hash);
+  var search = window.location.search.slice(1);
+  var src = hash || search;
+  var p = new URLSearchParams(src);
   var token = p.get('access_token');
   var exp = p.get('expires_in');
-  if(token && window.opener){
-    window.opener.postMessage({type:'gauth_token',token:token,expiresIn:exp},'*');
-    document.body.innerHTML='<p style="font-family:sans-serif;padding:30px;">✅ 인증 완료! 창이 자동으로 닫힙니다.</p>';
-    setTimeout(function(){window.close();},1500);
+  var error = p.get('error');
+
+  // 오류 응답
+  if(error){
+    el.innerHTML = '❌ 오류: <b>' + error + '</b><br><small>' + (p.get('error_description')||'') + '</small>';
+    return;
+  }
+
+  // 토큰 없음 — 디버깅 정보 표시
+  if(!token){
+    el.innerHTML = '⚠️ 토큰 없음<br>'
+      + '<small style="color:#888;">hash: ' + (hash||'(없음)') + '<br>'
+      + 'search: ' + (search||'(없음)') + '<br>'
+      + 'full url: ' + window.location.href + '</small>';
+    return;
+  }
+
+  // 토큰 있음 — opener로 전달
+  if(window.opener){
+    try{
+      window.opener.postMessage({type:'gauth_token', token:token, expiresIn:exp}, '*');
+      el.innerHTML = '✅ 인증 완료! 창이 자동으로 닫힙니다.';
+      setTimeout(function(){window.close();}, 1500);
+    }catch(e){
+      el.innerHTML = '⚠️ 전달 실패: ' + e.message;
+    }
   } else {
-    document.body.innerHTML='<p style="font-family:sans-serif;padding:30px;color:red;">토큰 없음. 다시 시도해주세요.</p>';
+    el.innerHTML = '⚠️ window.opener 없음<br><small>토큰은 받았지만 앱으로 전달 불가. 브라우저 팝업 차단 여부 확인해주세요.</small>';
   }
 })();
 </script>
